@@ -5,7 +5,7 @@ use Set;
 /* album provisioning */
 config const num_tracks: int;
 config var flac_path: string;
-const MUSIC_DIR = "/clusterfs/music/";
+const MUSIC_DIR = "/music_fs/music/";
 
 const flac_not_given: bool = flac_path.isEmpty();
 
@@ -32,7 +32,7 @@ proc provisionAlbumCmd(flac_path: string, r: range(?)) {
 proc createDirContentsSet(dir: string) {
 	var dir_contents: set(string);
 
-	for e in listdir(dir) {
+	for e in listDir(dir) {
 		dir_contents.add(e);
 	}
 	
