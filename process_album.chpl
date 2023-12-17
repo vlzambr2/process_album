@@ -6,6 +6,7 @@ use Set;
 config const num_tracks: int;
 config var flac_path: string;
 const MUSIC_DIR = "/music_fs/music/";
+const GEN_FS_DIR = "/gen_cluster_fs/";
 
 const flac_not_given: bool = flac_path.isEmpty();
 
@@ -17,7 +18,10 @@ proc provisionAlbumCmd(flac_path: string, r: range(?)) {
 	}
 	var chunk_arr = chunk.toArray();
 
-	var load_cmd = ["sudo", "abcde", "-d", flac_path, "-o", "wav"];
+	/* NOTE: There is currently a bug with abcde where if a config file is specified at runtime,
+	its settings override any command line arguments. In this case, specifying "-o wav" is redundant... 
+	until its fixed */
+	var load_cmd = ["sudo", "abcde", "-d", flac_path, "-c", GEN_FS_DIR + "abcde.conf"];
 	
 	var total_size = load_cmd.size + chunk_arr.size;
 	var load_chunk_cmd: [0..<total_size] string;
@@ -43,11 +47,16 @@ if flac_not_given {
 	var music_dir_before: set(string) = createDirContentsSet(MUSIC_DIR);
 
 	/* single command on 1st locale to rip entire CD into flac w/ embedded cuesheet */
-	var load_entire_disk_sub = spawn(["sudo", "abcde", "-1", "-o", "flac", "-a", "default,cue"]);
+	/* NOTE: Due to bug behavior with abcde (settings defined in a config file that is specified at
+	runtime override any command line arguments), will not specify "-c ${GEN_FS_DIR}/abcde.conf"
+	until its fixed; Config file on node will be used instead of config in shared filesystem. */ 
+	var load_entire_disk_sub = spawn(
+		["sudo", "abcde", "-1", "-o", "flac", "-a", "default,cue"]
+	);
 	load_entire_disk_sub.wait();
 
 	var music_dir_after: set(string) = createDirContentsSet(MUSIC_DIR);
-
+	
 	var new_flac_name_all = (music_dir_after - music_dir_before).toArray().first.split(".");	
 	var new_flac_name: string = new_flac_name_all[0];
 
